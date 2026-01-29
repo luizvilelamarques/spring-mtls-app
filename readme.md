@@ -12,39 +12,46 @@ Ideal para Comunicação Machine-to-Machine (M2M): Excelente para microserviços
 
 Este guia contém os passos consolidados para build, publicação e teste do microserviço utilizando autenticação mTLS.
 
-1. Build e Publicação da Imagem
+# 1. Build e Publicação da Imagem
 Utilize o comando abaixo para gerar a imagem e enviá-la ao seu Registry.
 
 Nota: Certifique-se de estar logado (docker login) antes do push.
 
 Bash
 
-# Definir variáveis para facilitar o reuso
+## Definir variáveis para facilitar o reuso
+
 $IMAGE_NAME = "seu-usuario/mtls-service:latest"
 
-# Build da imagem
+## Build da imagem
+
 docker build -t $IMAGE_NAME .
 
-# Envio para o Registry (Docker Hub / Nexus / Quay)
+## Envio para o Registry (Docker Hub / Nexus / Quay)
+
 docker push $IMAGE_NAME
-2. Teste em Ambiente Local (Docker)
+# 2. Teste em Ambiente Local (Docker)
 Execução do Container
 PowerShell
 
-# Subir o container mapeando a porta HTTPS
+## Subir o container mapeando a porta HTTPS
+
 docker run -d -p 8443:8443 --name mtls-test seu-usuario/mtls-service:latest
 
-# Extrair o certificado de cliente gerado no build para o host Windows
+## Extrair o certificado de cliente gerado no build para o host Windows
+
 docker cp mtls-test:/app/certs/client.p12 ./client.p12
 Validação com cURL (Windows)
 PowerShell
 
-# O uso do 'curl.exe' evita conflitos com o alias do PowerShell
+## Teste
 curl.exe -v --insecure `
     --cert-type P12 `
     --cert "client.p12:password" `
     https://localhost:8443/hello
-3. Teste no Navegador (Chrome / Edge)
+
+
+# 3. Teste no Navegador (Chrome / Edge)
 Para testar via interface gráfica, o Windows precisa reconhecer a identidade do cliente:
 
 Instalação do Certificado:
@@ -67,21 +74,21 @@ Aceite o aviso de certificado autoassinado (Avançado -> Prosseguir).
 
 Selecione o certificado "client" na janela pop-up que o Chrome exibirá.
 
-4. Implantação e Teste no Kubernetes / OpenShift
+# 4. Implantação e Teste no Kubernetes / OpenShift
 Extração do Certificado do Cluster
 Como o certificado é gerado no build, precisamos buscar a via que está dentro do Pod rodando no cluster:
 
 PowerShell
 
-# Obter o nome do Pod dinamicamente
+## Obter o nome do Pod dinamicamente
 $POD_NAME = (kubectl get pods -l app=mtls-app -o jsonpath='{.items[0].metadata.name}')
 
-# Copiar o certificado do Pod para sua máquina local
+## Copiar o certificado do Pod para sua máquina local
 kubectl cp "${POD_NAME}:/app/certs/client.p12" ./client.p12
 Teste da Route (OpenShift com Passthrough)
 PowerShell
 
-# Teste via Route externa
+## Teste via Route externa
 curl.exe -v --insecure `
     --cert-type P12 `
     --cert "client.p12:password" `
